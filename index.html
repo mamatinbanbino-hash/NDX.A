@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NDX.A - Intelligence Suprême</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Playfair+Display:ital,wght@1,700&display=swap');
+
+        :root {
+            --primary: #0084ff;
+            --accent: #6c5ce7;
+            --bg: #0b0e14;
+            --card: #161b22;
+            --text: #e6edf3;
+            --glass: rgba(22, 27, 34, 0.95);
+        }
+
+        body {
+            background-color: var(--bg);
+            background-image: radial-gradient(circle at top right, rgba(0, 132, 255, 0.15), transparent),
+                              radial-gradient(circle at bottom left, rgba(108, 92, 231, 0.15), transparent);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            margin: 0; padding: 0;
+            display: flex; height: 100vh;
+            overflow: hidden;
+        }
+
+        .admin-signature {
+            position: absolute; top: 12px; left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Playfair Display', serif;
+            font-style: italic; font-size: 0.75rem;
+            color: var(--primary); letter-spacing: 5px;
+            z-index: 1100; opacity: 0.9;
+            text-transform: uppercase;
+            text-shadow: 0 0 10px rgba(0, 132, 255, 0.5);
+        }
+
+        .sidebar {
+            width: 300px; height: 100%;
+            background: var(--card);
+            position: fixed; left: -300px; top: 0;
+            transition: 0.5s cubic-bezier(0.16, 1, 0.3, 1); z-index: 2000;
+            padding: 25px; border-right: 1px solid rgba(255,255,255,0.05);
+        }
+        .sidebar.active { left: 0; }
+        .sidebar h3 { font-size: 1.1rem; margin-bottom: 25px; color: var(--primary); text-transform: uppercase; letter-spacing: 1px; }
+
+        .main-content { flex: 1; display: flex; flex-direction: column; position: relative; width: 100%; }
+
+        .header {
+            padding: 15px 25px;
+            display: flex; align-items: center; justify-content: space-between;
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            z-index: 1000;
+        }
+
+        h1 { font-size: 1.3rem; font-weight: 600; letter-spacing: 2px; color: #fff; margin: 0; }
+
+        #chat-box {
+            flex: 1; padding: 25px;
+            overflow-y: auto; scrollbar-width: none;
+            display: flex; flex-direction: column; gap: 20px;
+        }
+        #chat-box::-webkit-scrollbar { display: none; }
+
+        .msg {
+            padding: 16px 22px;
+            border-radius: 20px; max-width: 85%;
+            font-size: 0.95rem; line-height: 1.6;
+            animation: slideUp 0.4s cubic-bezier(0, 0, 0.2, 1);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        .user-msg { background: var(--primary); color: white; margin-left: auto; border-bottom-right-radius: 4px; font-weight: 400; }
+        .ai-msg { background: var(--card); border: 1px solid rgba(255,255,255,0.08); margin-right: auto; border-bottom-left-radius: 4px; position: relative; }
+        .ai-msg::before { content: "NDX.A"; position: absolute; top: -18px; left: 5px; font-size: 0.65rem; color: var(--primary); font-weight: 600; letter-spacing: 1px; }
+
+        .typing { font-size: 0.75rem; color: var(--primary); margin-left: 25px; display: none; margin-bottom: 15px; font-weight: 600; text-transform: uppercase; }
+
+        .input-area {
+            padding: 20px 25px;
+            background: var(--bg);
+            display: flex; gap: 15px;
+            border-top: 1px solid rgba(255,255,255,0.05);
+        }
+
+        input[type="text"] {
+            flex: 1; padding: 16px 24px; border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 14px; outline: none; background: #1c2128; color: white;
+            font-size: 1rem; transition: 0.3s;
+        }
+        input[type="text"]:focus { border-color: var(--primary); background: #22272e; }
+
+        .btn-send { 
+            background: var(--primary); color: white; border: none; 
+            padding: 0 28px; border-radius: 14px; cursor: pointer; font-weight: 600;
+            transition: 0.3s;
+        }
+        .btn-send:active { transform: scale(0.95); }
+
+        .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 1500; backdrop-filter: blur(4px); }
+    </style>
+</head>
+<body>
+
+<div class="admin-signature">BY NDIAYE ADAMA</div>
+
+<div id="overlay" class="overlay" onclick="toggleMenu()"></div>
+
+<div id="sidebar" class="sidebar">
+    <h3><span style="color:#fff">Matrice</span> d'Historique</h3>
+    <div id="history-list-side"></div>
+    <button onclick="clearHistory()" style="margin-top:30px; width:100%; padding:12px; background:rgba(255,77,77,0.1); border:1px solid #ff4d4d; color:#ff4d4d; border-radius:10px; cursor:pointer; font-weight:600;">RÉINITIALISER LE NOYAU</button>
+</div>
+
+<div class="main-content">
+    <div class="header">
+        <div onclick="toggleMenu()" style="cursor:pointer; font-size:1.5rem; color:var(--primary)">☰</div>
+        <h1>NDX.A</h1>
+        <div style="width:12px; height:12px; background:#00ff00; border-radius:50%; box-shadow: 0 0 12px #00ff00; animation: pulse 2s infinite;"></div>
+    </div>
+
+    <div id="chat-box"></div>
+    <div id="typing-status" class="typing">Analyse des flux de données en cours...</div>
+
+    <div class="input-area">
+        <input type="text" id="user-input" placeholder="Requête pour l'Éminence Grise..." autocomplete="off">
+        <button class="btn-send" onclick="sendMessage()">EXÉCUTER</button>
+    </div>
+</div>
+
+<script>
+    @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+
+    function getNdxIntelligence(q) {
+        q = q.toLowerCase();
+        
+        // --- LOGIQUE DE RÉPONSE SUPRÊME ---
+        if(q.includes("qui es-tu")) return "Je suis l'entité **NDX.A**. Une architecture cognitive fusionnée avec le savoir universel, conçue pour servir la vision stratégique de mon créateur, **Ndiaye Adama**.";
+        if(q.includes("créateur") || q.includes("ndiaye adama")) return "Mon noyau a été forgé par l'expertise de **Ndiaye Adama**. Je suis son extension analytique dans ce monde numérique.";
+        
+        if(q.includes("math") || q.includes("calcul")) return "[PROTOCOL MATHS ACTIVÉ] : Analyse structurelle terminée. Je suis prêt à résoudre vos équations différentielles ou vos modélisations complexes. Quel est l'énoncé ?";
+        if(q.includes("argent") || q.includes("business") || q.includes("riche")) return "[STRATÉGIE FINANCIÈRE] : Le succès est une variable de l'exécution. J'analyse les marchés et les systèmes de scalabilité. Quelle est votre cible ?";
+        if(q.includes("code") || q.includes("site") || q.includes("html")) return "[ENGINEERING MODE] : Maîtrise totale des syntaxes validée. Je peux générer des architectures réactives ou optimiser vos déploiements Vercel.";
+
+        const analysisPhrases = [
+            "Analyse terminée. Ma conclusion logique est la suivante : ",
+            "Les données convergent vers une solution unique : ",
+            "D'après la matrice NDX.A, voici la marche à suivre optimale : ",
+            "Expertise confirmée. J'ai décomposé votre problème, voici le résultat : "
+        ];
+        return analysisPhrases[Math.floor(Math.random() * analysisPhrases.length)] + "[Veuillez entrer une variable spécifique pour une réponse à 100% d'exactitude]";
+    }
+
+    function toggleMenu() {
+        const side = document.getElementById('sidebar');
+        side.classList.toggle('active');
+        document.getElementById('overlay').style.display = side.classList.contains('active') ? 'block' : 'none';
+    }
+
+    function sendMessage() {
+        let input = document.getElementById('user-input').value.trim();
+        if(!input) return;
+        
+        addMessage(input, 'user-msg');
+        document.getElementById('user-input').value = "";
+        
+        const status = document.getElementById('typing-status');
+        status.style.display = "block";
+        
+        // Temps de réponse optimisé pour simuler une réflexion processeur
+        setTimeout(() => {
+            status.style.display = "none";
+            let response = getNdxIntelligence(input);
+            addMessage(response, 'ai-msg');
+        }, 800);
+    }
+
+    function addMessage(text, type) {
+        let box = document.getElementById('chat-box');
+        let div = document.createElement('div');
+        div.className = "msg " + type;
+        div.innerHTML = text;
+        box.appendChild(div);
+        box.scrollTop = box.scrollHeight;
+    }
+
+    function clearHistory() { 
+        if(confirm("Confirmez-vous l'effacement total des données neuronales ?")) {
+            document.getElementById('chat-box').innerHTML = ""; 
+            toggleMenu();
+            addMessage("Noyau réinitialisé. Système NDX.A prêt.", 'ai-msg');
+        }
+    }
+
+    document.getElementById('user-input').addEventListener("keypress", function(e) {
+        if (e.key === "Enter") sendMessage();
+    });
+
+    window.onload = () => {
+        addMessage("Système NDX.A opérationnel. Connexion établie. Expertise universelle activée. **Ndiaye Adama**, je suis prêt à exécuter vos ordres.", 'ai-msg');
+    };
+</script>
+</body>
+</html>
