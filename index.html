@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NDX.A - Intelligence Collaborative</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;700&family=Dancing+Script:wght@700&display=swap');
+
+        :root {
+            --primary: #00a8ff;
+            --accent: #9c88ff;
+            --bg: #ffffff;
+            --text: #2f3640;
+            --ai-bubble: #f1f2f6;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Comfortaa', sans-serif;
+            margin: 0; padding: 0;
+            display: flex; flex-direction: column; height: 100vh;
+        }
+
+        .header {
+            padding: 15px;
+            display: flex; align-items: center; justify-content: center;
+            border-bottom: 1px solid #f1f2f6;
+            position: relative;
+            background: white; z-index: 10;
+        }
+
+        .logo-ndx {
+            width: 45px; height: 45px;
+            border-radius: 50%; margin-right: 12px;
+            border: 2px solid var(--primary);
+            object-fit: cover;
+        }
+
+        h1 {
+            font-family: 'Dancing Script', cursive;
+            margin: 0; font-size: 1.8rem; color: var(--primary);
+        }
+
+        #chat-box {
+            flex: 1; padding: 20px;
+            overflow-y: auto; background-color: #ffffff;
+            scroll-behavior: smooth;
+        }
+
+        .msg {
+            margin-bottom: 20px; padding: 14px 18px;
+            border-radius: 20px; max-width: 85%;
+            font-size: 0.95rem; line-height: 1.5;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .img-msg {
+            max-width: 100%;
+            border-radius: 12px;
+            margin-top: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .user-msg {
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            color: white; margin-left: auto;
+            border-bottom-right-radius: 4px;
+        }
+
+        .ai-msg {
+            background-color: var(--ai-bubble);
+            color: var(--text); margin-right: auto;
+            border-bottom-left-radius: 4px;
+        }
+
+        .typing { font-size: 0.8rem; color: #a0a0a0; margin: 10px 25px; display: none; font-style: italic; }
+
+        .input-area {
+            padding: 15px; background: white;
+            display: flex; gap: 10px; border-top: 1px solid #f1f2f6;
+            align-items: center;
+        }
+
+        .btn-media {
+            background: #f1f2f6; border: none;
+            width: 40px; height: 40px; border-radius: 50%;
+            cursor: pointer; font-size: 1.2rem;
+        }
+
+        input[type="text"] {
+            flex: 1; padding: 12px 18px;
+            border: 2px solid #f1f2f6; border-radius: 30px;
+            outline: none; font-family: 'Comfortaa', sans-serif;
+        }
+
+        .btn-send {
+            background: var(--primary); color: white; border: none;
+            width: 40px; height: 40px; border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .modal {
+            display: none; position: fixed;
+            top:0; left:0; width:100%; height:100%;
+            background: white; z-index: 3000;
+            flex-direction: column; justify-content: center; align-items: center;
+        }
+
+        #admin-trigger { position: absolute; top: 0; right: 0; width: 40px; height: 40px; opacity: 0; cursor: pointer; }
+        
+        .admin-panel {
+            display: none; position: fixed;
+            top: 10%; left: 5%; width: 90%; height: 80%;
+            background: white; border-radius: 25px;
+            z-index: 4000; padding: 25px; overflow-y: auto; box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+
+<div id="authModal" class="modal">
+    <h1>NDX.A</h1>
+    <p>Intelligence Collaborative & Vision.</p>
+    <input type="text" id="reg-pseudo" placeholder="Pseudo..." style="padding:15px; margin:25px; border-radius:15px; border:2px solid #eee; width:200px; text-align:center;">
+    <button onclick="saveUser()" style="background:var(--primary); color:white; padding:12px 30px; border:none; border-radius:25px; cursor:pointer;">Lancer NDX.A</button>
+</div>
+
+<div id="adminPanel" class="admin-panel">
+    <h3>Dashboard Adama 👑</h3>
+    <button onclick="clearHistory()" style="background:red; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer;">Effacer tout l'historique</button>
+    <hr>
+    <div id="registry-list"></div>
+    <button onclick="closeAdmin()" style="margin-top:20px;">Fermer</button>
+</div>
+
+<div class="header">
+    <div id="admin-trigger" onclick="openAdmin()"></div>
+    <img src="logo-ndxa-1ereA.png" class="logo-ndx" alt="Logo" onerror="this.src='https://via.placeholder.com/50'">
+    <h1>NDX.A</h1>
+</div>
+
+<div id="chat-box"></div>
+<div id="typing-status" class="typing">NDX.A analyse les variables...</div>
+
+<input type="file" id="file-input" accept="image/*" style="display: none;" onchange="handleImage(event)">
+
+<div class="input-area">
+    <button class="btn-media" onclick="document.getElementById('file-input').click()">+</button>
+    <input type="text" id="user-input" placeholder="Pose-moi un problème complexe...">
+    <button class="btn-send" onclick="sendMessage()">➔</button>
+</div>
+
+<script>
+    let userPseudo = "";
+    const forbidden = ["casino", "pari", "bet", "argent", "triche", "hack"];
+
+    window.onload = function() {
+        let saved = localStorage.getItem('ndxa_pseudo');
+        if(!saved) { 
+            document.getElementById('authModal').style.display = 'flex'; 
+        } else { 
+            userPseudo = saved; 
+            loadHistory();
+            if(document.getElementById('chat-box').innerHTML === "") {
+                addMessage(`Bonjour ${userPseudo}. Je suis prêt. Quel problème complexe allons-nous résoudre aujourd'hui ?`, 'ai-msg', true);
+            }
+        }
+    };
+
+    function saveUser() {
+        let p = document.getElementById('reg-pseudo').value.trim();
+        if(p.length < 2) return;
+        userPseudo = p;
+        localStorage.setItem('ndxa_pseudo', p);
+        let reg = JSON.parse(localStorage.getItem('ndxa_reg') || "[]");
+        if(!reg.includes(p)) reg.push(p);
+        localStorage.setItem('ndxa_reg', JSON.stringify(reg));
+        document.getElementById('authModal').style.display = 'none';
+        addMessage(`Initialisation terminée. Précision analytique activée pour ${userPseudo}.`, 'ai-msg', true);
+    }
+
+    // --- GESTION HISTORIQUE ---
+    function saveHistory(text, type) {
+        let history = JSON.parse(localStorage.getItem('ndxa_chat_history') || "[]");
+        history.push({text: text, type: type});
+        localStorage.setItem('ndxa_chat_history', JSON.stringify(history));
+    }
+
+    function loadHistory() {
+        let history = JSON.parse(localStorage.getItem('ndxa_chat_history') || "[]");
+        history.forEach(msg => addMessage(msg.text, msg.type, false));
+    }
+
+    function clearHistory() {
+        if(confirm("Effacer tout l'historique ?")) {
+            localStorage.removeItem('ndxa_chat_history');
+            location.reload();
+        }
+    }
+
+    // --- GESTION IMAGE ---
+    function handleImage(event) {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const imgTag = `<img src="${e.target.result}" class="img-msg">`;
+                addMessage(imgTag + "<br>Analyse visuelle en cours...", 'user-msg', true);
+                triggerAIResponse("image_input");
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
+    function sendMessage() {
+        let input = document.getElementById('user-input').value.trim();
+        if(!input) return;
+        addMessage(input, 'user-msg', true);
+        document.getElementById('user-input').value = "";
+        triggerAIResponse(input);
+    }
+
+    function triggerAIResponse(input) {
+        document.getElementById('typing-status').style.display = "block";
+        
+        let delay = input.length > 50 ? 2500 : 1500;
+
+        setTimeout(() => {
+            document.getElementById('typing-status').style.display = "none";
+            let response = getAdvancedResponse(input.toLowerCase());
+            addMessage(response, 'ai-msg', true);
+        }, delay);
+    }
+
+    function addMessage(text, type, shouldSave) {
+        let box = document.getElementById('chat-box');
+        let div = document.createElement('div');
+        div.className = "msg " + type;
+        div.innerHTML = text;
+        box.appendChild(div);
+        box.scrollTop = box.scrollHeight;
+        if(shouldSave) saveHistory(text, type);
+    }
+
+    function getAdvancedResponse(q) {
+        // Sécurité
+        for(let word of forbidden) { if(q.includes(word)) return "Désolé, ma politique de sécurité m'interdit d'explorer ce domaine non-éducatif."; }
+
+        // Génération d'image (Simulée)
+        if(q.includes("génère une image") || q.includes("dessine")) {
+            return `[GÉNÉRATEUR NDX.A] : Voici le visuel correspondant à votre demande.<br><img src="https://picsum.photos/seed/${Math.random()}/400/300" class="img-msg">`;
+        }
+
+        // Problèmes complexes / Maths
+        if(q.includes("calcule") || q.includes("résous") || q.includes("math") || q.includes("x") || q.includes("=")) {
+            return `[RÉSOLUTION COMPLEXE] : Analyse du problème terminée.\n\n1. ÉNONCÉ : Identification des variables et des contraintes.\n2. MÉTHODE : Application du théorème approprié au niveau 1ère.\n3. RÉSULTAT : La solution optimisée est calculée. Voulez-vous le détail des étapes de calcul ?`;
+        }
+
+        // Fluidité Sociale (Sociable comme Gemini)
+        if(q.includes("ca va") || q.includes("comment vas-tu")) return "Je fonctionne à plein régime ! C'est un plaisir de t'aider à nouveau. Qu'est-ce qui occupe tes pensées aujourd'hui ?";
+        if(q.includes("qui t'a fait") || q.includes("créateur")) return "J'ai été conçu par Ndiaye Adama pour devenir l'IA de référence pour les élèves de 1ère.";
+
+        // Réponses fluides et contextuelles
+        const fillers = [
+            "C'est une excellente question qui touche à plusieurs points du programme. Pour être précis, il faut d'abord comprendre que...",
+            "Je vois parfaitement où tu veux en venir. D'un point de vue logique, cela s'explique par le fait que...",
+            "Analyse terminée. C'est un sujet fascinant car il permet de faire le pont entre la théorie et la pratique. Veux-tu un exemple concret ?",
+            "Ta demande est très pertinente. Dans le contexte de la 1ère, voici ce qu'il faut retenir en priorité..."
+        ];
+
+        return fillers[Math.floor(Math.random() * fillers.length)];
+    }
+
+    function openAdmin() {
+        if(prompt("Code Admin :") === "ADAMA99") {
+            document.getElementById('adminPanel').style.display = 'block';
+            let reg = JSON.parse(localStorage.getItem('ndxa_reg') || "[]");
+            document.getElementById('registry-list').innerHTML = "<b>Membres :</b><br>" + reg.join(" • ");
+        }
+    }
+    function closeAdmin() { document.getElementById('adminPanel').style.display = 'none'; }
+</script>
+
+</body>
+</html>
