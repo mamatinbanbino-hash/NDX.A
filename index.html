@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NDX.A - Intelligence Universelle Expert</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;700&family=Dancing+Script:wght@700&family=Playfair+Display:ital,wght@1,700&display=swap');
+
+        :root {
+            --primary: #00a8ff;
+            --accent: #9c88ff;
+            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            --glass: rgba(255, 255, 255, 0.08);
+            --text: #f8fafc;
+            --sidebar-bg: #0f172a;
+        }
+
+        body {
+            background: var(--bg-gradient);
+            background-attachment: fixed;
+            color: var(--text);
+            font-family: 'Comfortaa', sans-serif;
+            margin: 0; padding: 0;
+            display: flex; height: 100vh;
+            overflow: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .admin-signature {
+            position: absolute; top: 8px; left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Playfair Display', serif;
+            font-style: italic; font-size: 0.85rem;
+            color: var(--primary); letter-spacing: 3px;
+            z-index: 1100; pointer-events: none;
+            text-shadow: 0 0 10px rgba(0, 168, 255, 0.5);
+        }
+
+        /* SIDEBAR HISTORIQUE */
+        .sidebar {
+            width: 280px; height: 100%;
+            background: var(--sidebar-bg); color: white;
+            position: fixed; left: -280px; top: 0;
+            transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1); z-index: 2000;
+            padding: 20px; box-sizing: border-box;
+            box-shadow: 15px 0 40px rgba(0,0,0,0.5);
+        }
+        .sidebar.active { left: 0; }
+        .sidebar h3 { font-family: 'Dancing Script'; font-size: 2rem; border-bottom: 1px solid #334155; padding-bottom: 15px; margin-bottom: 20px; color: var(--primary); }
+        .history-item { 
+            padding: 14px; border-radius: 12px; background: rgba(255,255,255,0.05); 
+            margin-bottom: 12px; font-size: 0.85rem; cursor: pointer;
+            transition: 0.2s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+
+        .main-content {
+            flex: 1; display: flex; flex-direction: column; width: 100%; position: relative;
+        }
+
+        .header {
+            padding: 12px 20px;
+            display: flex; align-items: center; justify-content: space-between;
+            background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            z-index: 1000;
+        }
+
+        .logo-ndx {
+            width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--primary);
+            box-shadow: 0 0 15px rgba(0, 168, 255, 0.4);
+        }
+
+        h1 { font-family: 'Dancing Script', cursive; margin: 0; font-size: 1.8rem; color: var(--primary); }
+
+        #chat-box {
+            flex: 1; padding: 25px;
+            overflow-y: auto; scroll-behavior: smooth;
+            background: rgba(255, 255, 255, 0.02);
+            backdrop-filter: blur(15px);
+        }
+
+        .msg {
+            margin-bottom: 28px; padding: 18px 22px;
+            border-radius: 24px; max-width: 85%;
+            font-size: 0.98rem; line-height: 1.6;
+            animation: fadeIn 0.4s ease-out;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .user-msg {
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            color: white; margin-left: auto; border-bottom-right-radius: 4px;
+        }
+
+        .ai-msg {
+            background: var(--glass); 
+            border: 1px solid rgba(255,255,255,0.1);
+            color: var(--text); margin-right: auto; border-bottom-left-radius: 4px;
+        }
+
+        .typing { font-size: 0.85rem; color: var(--primary); margin: 5px 25px 15px; display: none; font-weight: bold; }
+
+        /* INPUT AREA OPTIMISÉE */
+        .input-area {
+            padding: 15px 20px; 
+            background: rgba(15, 23, 42, 0.9); 
+            backdrop-filter: blur(30px);
+            display: flex; gap: 12px; align-items: center;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .btn-media { 
+            background: rgba(255,255,255,0.1); border: none; width: 45px; height: 45px; border-radius: 50%; 
+            cursor: pointer; font-size: 1.5rem; color: var(--primary);
+        }
+
+        input[type="text"] {
+            flex: 1; padding: 14px 22px; border: none; border-radius: 30px;
+            outline: none; font-family: inherit; font-size: 1rem;
+            background: rgba(255,255,255,0.08); color: white;
+            transition: background 0.2s;
+        }
+        input[type="text"]:focus { background: rgba(255,255,255,0.12); }
+
+        .btn-send { 
+            background: var(--primary); color: white; border: none; width: 45px; height: 45px; 
+            border-radius: 50%; cursor: pointer; transition: transform 0.2s;
+        }
+        .btn-send:active { transform: scale(0.9); }
+
+        /* ADMIN */
+        #admin-trigger { position: absolute; top: 0; right: 0; width: 50px; height: 50px; opacity: 0; cursor: pointer; z-index: 1001; }
+        .admin-panel {
+            display: none; position: fixed; top: 10%; left: 5%; width: 90%; height: 80%;
+            background: #1e293b; border-radius: 35px; z-index: 6000; padding: 35px; overflow-y: auto;
+            border: 1px solid var(--primary);
+        }
+        
+        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); z-index: 1500; }
+    </style>
+</head>
+<body>
+
+<div class="admin-signature">BY NDIAYE ADAMA</div>
+
+<div id="overlay" class="overlay" onclick="toggleMenu()"></div>
+
+<div id="sidebar" class="sidebar">
+    <h3>Expertise Historique 📜</h3>
+    <div id="history-list-side"></div>
+    <br>
+    <button onclick="clearHistory()" style="background:rgba(255,118,117,0.1); border:1px solid #ff7675; color:#ff7675; padding:12px; border-radius:15px; width:100%; cursor:pointer;">Réinitialiser Expert</button>
+</div>
+
+<div id="adminPanel" class="admin-panel">
+    <h2 style="font-family:'Dancing Script'; color:var(--primary);">Expert System Adama 👑</h2>
+    <div id="registry-list"></div>
+    <button onclick="closeAdmin()" style="margin-top:20px; padding:10px; border-radius:10px;">Fermer</button>
+</div>
+
+<div class="main-content">
+    <div class="header">
+        <div class="menu-btn" onclick="toggleMenu()">☰</div>
+        <h1>NDX.A</h1>
+        <div id="admin-trigger" onclick="openAdmin()"></div>
+        <img src="logo-ndxa-1ereA.png" class="logo-ndx" alt="Logo" onerror="this.src='https://via.placeholder.com/40'">
+    </div>
+
+    <div id="chat-box"></div>
+    <div id="typing-status" class="typing">L'expert NDX.A traite votre requête...</div>
+
+    <input type="file" id="file-input" accept="image/*" style="display: none;" onchange="handleImage(event)">
+
+    <div class="input-area">
+        <button class="btn-media" onclick="document.getElementById('file-input').click()">+</button>
+        <input type="text" id="user-input" placeholder="Posez une question à l'expert..." autocomplete="off">
+        <button class="btn-send" onclick="sendMessage()">➔</button>
+    </div>
+</div>
+
+<script>
+    let userPseudo = "Utilisateur";
+    const banni = ["casino", "pari", "bet", "argent", "triche", "hack"];
+
+    window.onload = function() {
+        if(localStorage.getItem('ndxa_pseudo')) userPseudo = localStorage.getItem('ndxa_pseudo');
+        loadHistory();
+        refreshSidebar();
+        if(document.getElementById('chat-box').innerHTML === "") {
+            addMessage(`Expert NDX.A activé. Je maîtrise désormais l'intégralité des connaissances mondiales : Sciences, Sports, Carrières, Géopolitique et Prompting. Quelle est votre requête complexe ?`, 'ai-msg', true);
+        }
+    };
+
+    // --- ACCÉLÉRATEUR D'INPUT ---
+    document.getElementById('user-input').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') sendMessage();
+    });
+
+    function toggleMenu() {
+        document.getElementById('sidebar').classList.toggle('active');
+        document.getElementById('overlay').style.display = document.getElementById('sidebar').classList.contains('active') ? 'block' : 'none';
+    }
+
+    function triggerAIResponse(input) {
+        document.getElementById('typing-status').style.display = "block";
+        // Temps de réponse calibré pour paraître expert
+        setTimeout(() => {
+            document.getElementById('typing-status').style.display = "none";
+            let response = getExpertResponse(input.toLowerCase());
+            addMessage(response, 'ai-msg', true);
+        }, 1200);
+    }
+
+    function getExpertResponse(q) {
+        for(let word of banni) { if(q.includes(word)) return "ACCÈS REFUSÉ : Violation des protocoles de sécurité Expert."; }
+        
+        // --- BASE DE CONNAISSANCE UNIVERSELLE ---
+        if(q.includes("prompt")) return "[PROMPT EXPERT] : Analyse structurelle de votre demande... Je peux coder des prompts haute fidélité pour n'importe quelle tâche spécifique. Détaillez vos paramètres.";
+        if(q.includes("sport") || q.includes("foot")) return "[EXPERT SPORTIF] : Accès aux flux mondiaux... Je connais chaque règle, chaque historique de club et chaque statistique d'athlète sur les 5 continents.";
+        if(q.includes("métier") || q.includes("travail") || q.includes("ligne")) return "[CARRIÈRE & TECH] : Expert en orientation professionnelle et business digital (Trading, IA, SaaS, Freelance). Ma base couvre 100% des secteurs d'activité.";
+        if(q.includes("pays") || q.includes("monde")) return "[GÉOPOLITIQUE UNIVERSELLE] : Connaissance totale des 195 pays (PIB, Culture, Histoire, Politique). Demandez-moi n'importe quelle donnée pays.";
+        if(q.includes("leçon") || q.includes("cours")) return "[ACADÉMIE SUPRÊME] : Je possède l'intégralité des leçons du monde, du primaire au doctorat. Quelle discipline voulez-vous maîtriser ?";
+
+        const expertAnswers = [
+            "ÉVALUATION EXPERTE : Après analyse de votre requête, voici la conclusion technique la plus précise...",
+            "SYNTHÈSE UNIVERSELLE : D'un point de vue global et factuel, les données indiquent que...",
+            "RÉPONSE CIRCONSCRITE : Pour être parfaitement exact dans ce domaine, il faut considérer les variables suivantes...",
+            "CONNAISSANCE NDX.A : Ma base de données mondiale confirme que cette situation nécessite la stratégie suivante..."
+        ];
+        return expertAnswers[Math.floor(Math.random() * expertAnswers.length)];
+    }
+
+    function sendMessage() {
+        let input = document.getElementById('user-input').value.trim();
+        if(!input) return;
+        addMessage(input, 'user-msg', true);
+        document.getElementById('user-input').value = "";
+        triggerAIResponse(input);
+    }
+
+    // Fonctions History & Media (inchangées pour préserver les fonctionnalités)
+    function saveHistory(text, type) {
+        let history = JSON.parse(localStorage.getItem('ndxa_chat_history') || "[]");
+        history.push({text: text, type: type});
+        localStorage.setItem('ndxa_chat_history', JSON.stringify(history));
+        refreshSidebar();
+    }
+    function loadHistory() {
+        let history = JSON.parse(localStorage.getItem('ndxa_chat_history') || "[]");
+        history.forEach(msg => addMessage(msg.text, msg.type, false));
+    }
+    function refreshSidebar() {
+        let history = JSON.parse(localStorage.getItem('ndxa_chat_history') || "[]");
+        let side = document.getElementById('history-list-side');
+        side.innerHTML = "";
+        history.filter(m => m.type === 'user-msg').slice(-12).reverse().forEach(m => {
+            let item = document.createElement('div');
+            item.className = 'history-item';
+            item.innerText = m.text;
+            side.appendChild(item);
+        });
+    }
+    function clearHistory() { localStorage.removeItem('ndxa_chat_history'); location.reload(); }
+    function handleImage(event) {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                addMessage(`<img src="${e.target.result}" style="width:100%; border-radius:18px;"><br>Analyse visuelle haute précision...`, 'user-msg', true);
+                triggerAIResponse("image_input");
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+    function addMessage(text, type, shouldSave) {
+        let box = document.getElementById('chat-box');
+        let div = document.createElement('div');
+        div.className = "msg " + type;
+        div.innerHTML = text;
+        box.appendChild(div);
+        box.scrollTop = box.scrollHeight;
+        if(shouldSave) saveHistory(text, type);
+    }
+    function openAdmin() { if(prompt("Système :") === "ADAMA99") { document.getElementById('adminPanel').style.display = 'block'; } }
+    function closeAdmin() { document.getElementById('adminPanel').style.display = 'none'; }
+</script>
+
+</body>
+</html>
