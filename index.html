@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>NDX.A - Intelligence Scolaire</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;700&family=Dancing+Script:wght@700&display=swap');
+
+        :root {
+            --primary: #00a8ff;
+            --accent: #9c88ff;
+            --bg: #ffffff;
+            --text: #2f3640;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Comfortaa', sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        /* HEADER */
+        .header {
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-bottom: 1px solid #f1f2f6;
+            position: relative;
+        }
+
+        .logo-cvsa {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            margin-right: 15px;
+            border: 2px solid var(--primary);
+        }
+
+        h1 {
+            font-family: 'Dancing Script', cursive;
+            margin: 0;
+            font-size: 1.8rem;
+            color: var(--primary);
+        }
+
+        /* CHAT AREA */
+        #chat-box {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background-color: #fcfcfc;
+        }
+
+        .msg {
+            margin-bottom: 15px;
+            padding: 12px 18px;
+            border-radius: 18px;
+            max-width: 85%;
+            font-size: 0.95rem;
+            line-height: 1.4;
+        }
+
+        .user-msg {
+            background-color: var(--primary);
+            color: white;
+            margin-left: auto;
+            border-bottom-right-radius: 4px;
+        }
+
+        .ai-msg {
+            background-color: #f1f2f6;
+            color: var(--text);
+            margin-right: auto;
+            border-bottom-left-radius: 4px;
+            border: 1px solid #e1e2e6;
+        }
+
+        /* INPUT BAR */
+        .input-area {
+            padding: 15px;
+            background: white;
+            display: flex;
+            gap: 10px;
+            border-top: 1px solid #f1f2f6;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 12px 20px;
+            border: 2px solid #f1f2f6;
+            border-radius: 25px;
+            outline: none;
+            font-family: 'Comfortaa', sans-serif;
+            transition: border 0.3s;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--primary);
+        }
+
+        .btn-send {
+            background: var(--primary);
+            color: white;
+            border: none;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.2rem;
+        }
+
+        /* AUTH MODAL */
+        .modal {
+            display: none;
+            position: fixed;
+            top:0; left:0; width:100%; height:100%;
+            background: white;
+            z-index: 3000;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .modal input {
+            width: 80%;
+            max-width: 300px;
+            padding: 12px;
+            margin: 20px 0;
+            border: 2px solid var(--primary);
+            border-radius: 15px;
+            text-align: center;
+        }
+
+        .btn-start {
+            background: linear-gradient(to right, var(--primary), var(--accent));
+            color: white;
+            padding: 12px 35px;
+            border: none;
+            border-radius: 25px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        /* ADMIN TRIGGER */
+        #admin-btn {
+            position: absolute;
+            top: 0; right: 0;
+            width: 50px; height: 50px;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .admin-panel {
+            display: none;
+            position: fixed;
+            top: 10%; left: 5%; width: 90%; height: 80%;
+            background: white;
+            border: 2px solid var(--text);
+            border-radius: 20px;
+            z-index: 4000;
+            padding: 20px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+
+<div id="authModal" class="modal">
+    <h1>NDX.A</h1>
+    <p>Études & Intelligence - 1ère</p>
+    <input type="text" id="reg-pseudo" placeholder="Choisis ton Pseudo">
+    <button class="btn-start" onclick="saveUser()">Commencer</button>
+</div>
+
+<div id="adminPanel" class="admin-panel">
+    <h3>ADMIN: NDIAYE ADAMA 👑</h3>
+    <div id="registry-list"></div>
+    <br>
+    <button onclick="closeAdmin()" class="btn-start" style="background: #333;">Fermer</button>
+</div>
+
+<div class="header">
+    <div id="admin-btn" onclick="openAdmin()"></div>
+    <img src="https://via.placeholder.com/50" class="logo-cvsa" alt="CVSA">
+    <h1>NDX.A</h1>
+</div>
+
+<div id="chat-box">
+    <div class="msg ai-msg">Bonjour. Je suis NDX.A. Je suis prêt à t'aider pour tes révisions de 1ère. Que veux-tu savoir ?</div>
+</div>
+
+<div class="input-area">
+    <input type="text" id="user-input" placeholder="Pose ta question ici...">
+    <button class="btn-send" onclick="sendMessage()">➔</button>
+</div>
+
+<script>
+    let userPseudo = "";
+    const forbidden = ["casino", "pari", "bet", "argent", "triche"];
+
+    window.onload = function() {
+        let saved = localStorage.getItem('ndxa_pseudo');
+        if(!saved) {
+            document.getElementById('authModal').style.display = 'flex';
+        } else {
+            userPseudo = saved;
+        }
+    };
+
+    function saveUser() {
+        let p = document.getElementById('reg-pseudo').value.trim();
+        if(p.length < 2) return;
+        userPseudo = p;
+        localStorage.setItem('ndxa_pseudo', p);
+        
+        let reg = JSON.parse(localStorage.getItem('ndxa_reg') || "[]");
+        if(!reg.includes(p)) reg.push(p);
+        localStorage.setItem('ndxa_reg', JSON.stringify(reg));
+        
+        document.getElementById('authModal').style.display = 'none';
+    }
+
+    function sendMessage() {
+        let input = document.getElementById('user-input').value.trim();
+        if(!input) return;
+
+        addMessage(input, 'user-msg');
+        document.getElementById('user-input').value = "";
+
+        setTimeout(() => {
+            let response = getAIResponse(input.toLowerCase());
+            addMessage(response, 'ai-msg');
+        }, 600);
+    }
+
+    function addMessage(text, type) {
+        let box = document.getElementById('chat-box');
+        let div = document.createElement('div');
+        div.className = "msg " + type;
+        div.innerText = text;
+        box.appendChild(div);
+        box.scrollTop = box.scrollHeight;
+    }
+
+    function getAIResponse(text) {
+        for(let word of forbidden) {
+            if(text.includes(word)) return "Désolé, cette thématique n'est pas autorisée. NDX.A est un outil strictement éducatif.";
+        }
+
+        if(text.includes("ndiaye") || text.includes("admin")) return "L'administrateur principal de cette plateforme est Ndiaye Adama.";
+        if(text.includes("bac") || text.includes("épreuves")) return "Le Bac de français et les épreuves de spécialité sont les priorités de la 1ère. Travaille tes méthodes !";
+        
+        return "C'est une excellente question pour ton cursus de 1ère. Veux-tu que nous approfondissions ce sujet ensemble ?";
+    }
+
+    // ADMIN LOGIC
+    function openAdmin() {
+        let code = prompt("Code Admin :");
+        if(code === "ADAMA99") {
+            document.getElementById('adminPanel').style.display = 'block';
+            let list = document.getElementById('registry-list');
+            let reg = JSON.parse(localStorage.getItem('ndxa_reg') || "[]");
+            list.innerHTML = "<b>Membres inscrits :</b><br>" + reg.join("<br>");
+        }
+    }
+
+    function closeAdmin() {
+        document.getElementById('adminPanel').style.display = 'none';
+    }
+</script>
+
+</body>
+</html>
